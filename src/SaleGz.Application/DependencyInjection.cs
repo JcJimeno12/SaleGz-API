@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using SaleGz.Application.Common.Behaviors;
+using SaleGz.Application.Facturas.Service;
 using System.Reflection;
 
 namespace SaleGz.Application;
@@ -22,6 +23,10 @@ public static class DependencyInjection
 
         // FluentValidation — registra todos los Validators automáticamente
         services.AddValidatorsFromAssembly(assembly);
+
+        services.AddScoped<IXmlSignatureService, XmlSignatureService>();
+
+
 
         return services;
     }

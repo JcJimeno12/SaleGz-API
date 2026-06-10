@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SaleGz.Application.Common.Exceptions;
 using SaleGz.Application.Common.Interfaces;
+using SaleGz.Application.Facturas.Service;
 using SaleGz.Domain.Entities;
 using SaleGz.Domain.Enums; 
 
@@ -72,16 +73,20 @@ public class EnviarComprobanteDgiiHandler : IRequestHandler<EnviarComprobanteDgi
     private readonly IComprobanteRepository _repository;
     private readonly ILogger<EnviarComprobanteDgiiHandler> _logger;
 
+    private readonly IXmlSignatureService _xmlSignatureService;
+
     public EnviarComprobanteDgiiHandler(
-        IAppDbContext context,
-        IDgiiIntegrationService dgiiService,
-        IComprobanteXmlService xmlService,
-        IComprobanteRepository repository,
-        ILogger<EnviarComprobanteDgiiHandler> logger)
+     IAppDbContext context,
+     IDgiiIntegrationService dgiiService,
+     IComprobanteXmlService xmlService,
+     IXmlSignatureService xmlSignatureService,
+     IComprobanteRepository repository,
+     ILogger<EnviarComprobanteDgiiHandler> logger)
     {
         _context = context;
         _dgiiService = dgiiService;
         _xmlService = xmlService;
+        _xmlSignatureService = xmlSignatureService;
         _repository = repository;
         _logger = logger;
     }
@@ -112,14 +117,17 @@ public class EnviarComprobanteDgiiHandler : IRequestHandler<EnviarComprobanteDgi
 
             // Aquí se debería firmar digitalmente el XML
             // Por ahora, usamos un dummy
-            var firmaDigital = GenerarFirmaDigital();
+            //var firmaDigital = GenerarFirmaDigital();
+
+            var xmlFirmado = await _xmlSignatureService
+                .FirmarXmlAsync(xmlGenerado, ct);
 
             _logger.LogInformation("Enviando comprobante a DGII para factura {FacturaId}", request.FacturaId);
             var respuesta = await _dgiiService.EnviarComprobanteAsync(
                 factura.CodigoSeguridad ?? "",
-                xmlGenerado,
-                firmaDigital,
-                "31", // Tipo Fiscal
+                xmlFirmado,
+                string.Empty,
+                "31",
                 ct
             );
 
@@ -149,8 +157,8 @@ public class EnviarComprobanteDgiiHandler : IRequestHandler<EnviarComprobanteDgi
             {
                 FacturaId = factura.FacturaId,
                 NumeroComprobante = factura.CodigoSeguridad ?? "",
-                Xml = xmlGenerado,
-                FirmaDigital = firmaDigital,
+                Xml = xmlFirmado,
+                FirmaDigital = "XML_FIRMADO",
                 TrackId = respuesta.TrackId,
                 Estado = EstadoComprobante.Enviado,
                 RespuestaDgii = respuesta.Content,
@@ -253,4 +261,6 @@ public class ReintentarEnvioComprobanteHandler : IRequestHandler<ReintentarEnvio
             throw;
         }
     }
+ 
+
 }

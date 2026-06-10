@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SaleGz.Application.Common.Interfaces;
+using SaleGz.Application.Facturas.Service;
 using SaleGz.Infrastructure.Persistence;
 using SaleGz.Infrastructure.Repositories;
 using SaleGz.Infrastructure.Services;
@@ -57,6 +58,7 @@ public static class DependencyInjection
         // Registrar IDgiiIntegrationService para inyección directa
         services.AddScoped<IDgiiIntegrationService>(provider =>
             provider.GetRequiredService<DgiiIntegrationService>());
+         
 
         // ── Background Services ──────────────────────────────
         services.AddHostedService<ActualizarEstadoDgiiHostedService>();
