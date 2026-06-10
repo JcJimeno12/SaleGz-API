@@ -52,11 +52,15 @@ public interface IAppDbContext
 
    DbSet<UsuarioPermiso> UsuarioPermisos { get; set; }
 
+    DbSet<ComprobanteElectronica> ComprobantesElectronicos { get; }
+    DbSet<LogTransaccionDgii> LogsTransaccionesDgii { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     DatabaseFacade Database { get; }
 
-
+   
+     
 }
 
 public interface ICurrentUserService

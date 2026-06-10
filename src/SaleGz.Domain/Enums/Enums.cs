@@ -58,3 +58,13 @@ public enum TipoEntidad
     Proveedor = 1,
     Ambos = 2
 }
+
+public enum EstadoComprobante
+{
+    Pendiente = 0,
+    Enviado = 1,
+    Aceptado = 2,
+    Rechazado = 3,
+    Cancelado = 4,
+    ErrorEnvio = 5
+}

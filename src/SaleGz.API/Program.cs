@@ -28,9 +28,13 @@ builder.Services
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
     });
 
+
+
 // ── Swagger con soporte JWT ──────────────────────────────────────
 builder.Services.AddSwaggerGen(c =>
 {
+   
+
     c.SwaggerDoc("v1", new() { Title = "SaleGz API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -57,6 +61,8 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+
 });
 
 // ── CORS (ajusta en producción) ──────────────────────────────────

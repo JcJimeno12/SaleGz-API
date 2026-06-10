@@ -73,6 +73,32 @@ namespace SaleGz.API.Controllers
         }
 
 
+        // ✅ NUEVO - ENDPOINTS FACTURACIÓN ELECTRÓNICA
+
+        /// <summary>Obtener estado de comprobante electrónico</summary>
+        [HttpGet("{id}/comprobante")]
+        public async Task<IActionResult> ObtenerComprobante(int id)
+        {
+            var dto = await _mediator.Send(new ObtenerComprobanteElectronicoQuery(id));
+            return Ok(dto);
+        }
+
+        /// <summary>Enviar factura a DGII para generar e-CF</summary>
+        [HttpPost("{id}/enviar-dgii")]
+        public async Task<IActionResult> EnviarDgii(int id)
+        {
+            await _mediator.Send(new EnviarComprobanteDgiiCommand(id));
+            return Accepted();
+        }
+
+        /// <summary>Reintentar envío de comprobante rechazado</summary>
+        [HttpPost("comprobante/{comprobanteId}/reintentar")]
+        public async Task<IActionResult> ReintentarComprobante(int comprobanteId)
+        {
+            await _mediator.Send(new ReintentarEnvioComprobanteCommand(comprobanteId));
+            return Accepted();
+        }
+
 
 
     }

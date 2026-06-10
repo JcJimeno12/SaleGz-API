@@ -45,6 +45,11 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<MovimientoInventario> MovimientosInventario => Set<MovimientoInventario>();
     public DbSet<UsuarioPermiso> UsuarioPermisos { get; set; }
 
+    public DbSet<ComprobanteElectronica> ComprobantesElectronicos => Set<ComprobanteElectronica>();
+    public DbSet<LogTransaccionDgii> LogsTransaccionesDgii => Set<LogTransaccionDgii>();
+
+
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -128,6 +133,42 @@ public class AppDbContext : DbContext, IAppDbContext
                 .WithMany()
                 .HasForeignKey(x => x.UsuarioId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        // ───────── COMPROBANTE ELECTRÓNICO ─────────
+
+        builder.Entity<ComprobanteElectronica>(ce =>
+        {
+            ce.HasKey(x => x.ComprobanteElectronicoId);
+            ce.Property(x => x.NumeroComprobante).HasMaxLength(50).IsRequired();
+            ce.Property(x => x.Xml).HasMaxLength(int.MaxValue);
+            ce.Property(x => x.FirmaDigital).HasMaxLength(int.MaxValue);
+            ce.Property(x => x.TrackId).HasMaxLength(100);
+            ce.Property(x => x.RespuestaDgii).HasMaxLength(int.MaxValue);
+            ce.Property(x => x.MensajeError).HasMaxLength(500);
+            ce.HasIndex(x => x.NumeroComprobante).IsUnique();
+            ce.HasIndex(x => x.FacturaId);
+            ce.HasIndex(x => x.TrackId);
+            ce.HasIndex(x => x.Estado);
+        });
+
+        builder.Entity<LogTransaccionDgii>(lt =>
+        {
+            lt.HasKey(x => x.LogTransaccionDgiiId);
+            lt.Property(x => x.Accion).HasMaxLength(100);
+            lt.Property(x => x.Peticion).HasMaxLength(int.MaxValue);
+            lt.Property(x => x.Respuesta).HasMaxLength(int.MaxValue);
+            lt.HasIndex(x => x.ComprobanteElectronicoId);
+            lt.HasIndex(x => x.FechaRegistro);
+        });
+
+        // ───────── RELACIÓN FACTURA -> COMPROBANTE ─────────
+        builder.Entity<Factura>(f =>
+        {
+            f.HasOne(x => x.ComprobanteElectronica)
+                .WithOne(x => x.Factura)
+                .HasForeignKey<ComprobanteElectronica>(x => x.FacturaId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
     }
