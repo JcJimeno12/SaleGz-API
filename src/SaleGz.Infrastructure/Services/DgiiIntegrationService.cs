@@ -2,49 +2,23 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SaleGz.Application.Common.Interfaces;
 using System.Net.Http.Headers;
-using System.Text; 
+using System.Text;
 
 namespace SaleGz.Infrastructure.Services;
-
-public interface IDgiiIntegrationService
-{
-    Task<EnviarComprobanteResponse> EnviarComprobanteAsync(
-        string numeroComprobante,
-        string xml,
-        string firmaDigital,
-        string tipoEcf,
-        CancellationToken ct);
-
-    Task<ConsultarEstadoResponse> ConsultarEstadoAsync(
-        string numeroComprobante,
-        CancellationToken ct);
-}
 
 public class DgiiIntegrationService : IDgiiIntegrationService
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DgiiIntegrationService> _logger;
-    private readonly string _urlPost;
-    private readonly string _urlGet;
-    private readonly string _apiKey;
 
-    public DgiiIntegrationService(
-        HttpClient httpClient,
-        IConfiguration configuration,
-        ILogger<DgiiIntegrationService> logger)
+    public DgiiIntegrationService(HttpClient httpClient, IConfiguration configuration, ILogger<DgiiIntegrationService> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
         _logger = logger;
-
-        var dgiiSettings = configuration.GetSection("DgiiSettings");
-        _urlPost = dgiiSettings["UrlPost"]!;
-        _urlGet = dgiiSettings["UrlGet"]!;
-        _apiKey = dgiiSettings["ApiKey"]!;
-
-        _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
     public async Task<EnviarComprobanteResponse> EnviarComprobanteAsync(
@@ -54,170 +28,21 @@ public class DgiiIntegrationService : IDgiiIntegrationService
         string tipoEcf,
         CancellationToken ct)
     {
-        try
-        {
-            _logger.LogInformation("Enviando comprobante {NumeroComprobante} a DGII", numeroComprobante);
-
-            var payload = new { encf = numeroComprobante, xml, firmaDigital };
-            var json = JsonConvert.SerializeObject(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using (var request = new HttpRequestMessage(HttpMethod.Post, _urlPost))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-                request.Content = content;
-
-                var response = await _httpClient.SendAsync(request, ct);
-                var responseContent = await response.Content.ReadAsStringAsync(ct);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("Error al enviar comprobante. StatusCode: {StatusCode}, Response: {Response}",
-                        response.StatusCode, responseContent);
-
-                    return new EnviarComprobanteResponse
-                    {
-                        IsSuccess = false,
-                        StatusCode = (int)response.StatusCode,
-                        Content = responseContent
-                    };
-                }
-
-                var obj = JObject.Parse(responseContent);
-                var estado = obj["estado"]?.ToString();
-                var trackId = obj["track_id"]?.ToString();
-                var urlDgii = obj["url_dgii"]?.ToString();
-
-                _logger.LogInformation("Comprobante {NumeroComprobante} enviado exitosamente. TrackId: {TrackId}",
-                    numeroComprobante, trackId);
-
-                return new EnviarComprobanteResponse
-                {
-                    IsSuccess = true,
-                    StatusCode = (int)response.StatusCode,
-                    Content = responseContent,
-                    EstadoFactura = estado,
-                    TrackId = trackId,
-                    Url = urlDgii
-                };
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogError(ex, "Error de conexión al enviar comprobante {NumeroComprobante}", numeroComprobante);
-            return new EnviarComprobanteResponse
-            {
-                IsSuccess = false,
-                StatusCode = 0,
-                Content = ex.Message
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error inesperado al enviar comprobante {NumeroComprobante}", numeroComprobante);
-            return new EnviarComprobanteResponse
-            {
-                IsSuccess = false,
-                StatusCode = 500,
-                Content = ex.Message
-            };
-        }
+        // TODO: Implementar lógica de envío a DGII
+        throw new NotImplementedException();
     }
 
     public async Task<ConsultarEstadoResponse> ConsultarEstadoAsync(
         string numeroComprobante,
         CancellationToken ct)
     {
-        try
-        {
-            _logger.LogInformation("Consultando estado de {NumeroComprobante} en DGII", numeroComprobante);
-
-            var url = $"{_urlGet}?encf={numeroComprobante}";
-
-            using (var request = new HttpRequestMessage(HttpMethod.Get, url))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                var response = await _httpClient.SendAsync(request, ct);
-                var responseContent = await response.Content.ReadAsStringAsync(ct);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("Error al consultar estado. StatusCode: {StatusCode}", response.StatusCode);
-                    return new ConsultarEstadoResponse
-                    {
-                        IsSuccess = false,
-                        StatusCode = (int)response.StatusCode,
-                        Content = responseContent
-                    };
-                }
-
-                var obj = JsonConvert.DeserializeObject<RootResponse>(responseContent);
-
-                if (obj?.Data == null)
-                {
-                    _logger.LogWarning("Respuesta vacía al consultar estado de {NumeroComprobante}", numeroComprobante);
-                    return new ConsultarEstadoResponse
-                    {
-                        IsSuccess = false,
-                        StatusCode = 200,
-                        Content = "Respuesta vacía"
-                    };
-                }
-
-                var estado = obj.Data.Dgii?.Estado ?? "Desconocido";
-                var mensajes = obj.Data.Dgii?.Mensaje?.Select(m => m.Valor).ToList() ?? new List<string>();
-
-                _logger.LogInformation("Estado de {NumeroComprobante}: {Estado}", numeroComprobante, estado);
-
-                return new ConsultarEstadoResponse
-                {
-                    IsSuccess = true,
-                    StatusCode = 200,
-                    Content = responseContent,
-                    Estado = estado,
-                    Mensajes = mensajes,
-                    TrackId = obj.Data.TrackId
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al consultar estado de {NumeroComprobante}", numeroComprobante);
-            return new ConsultarEstadoResponse
-            {
-                IsSuccess = false,
-                StatusCode = 500,
-                Content = ex.Message
-            };
-        }
+        // TODO: Implementar lógica de consulta de estado a DGII
+        throw new NotImplementedException();
     }
 }
+ 
 
-// ════════════════════════════════════════
-// RESPONSE MODELS
-// ════════════════════════════════════════
 
-public class EnviarComprobanteResponse
-{
-    public bool IsSuccess { get; set; }
-    public int StatusCode { get; set; }
-    public string Content { get; set; } = string.Empty;
-    public string? EstadoFactura { get; set; }
-    public string? TrackId { get; set; }
-    public string? Url { get; set; }
-}
-
-public class ConsultarEstadoResponse
-{
-    public bool IsSuccess { get; set; }
-    public int StatusCode { get; set; }
-    public string Content { get; set; } = string.Empty;
-    public string? Estado { get; set; }
-    public List<string> Mensajes { get; set; } = new();
-    public string? TrackId { get; set; }
-}
 
 // ════════════════════════════════════════
 // DGII MODELS

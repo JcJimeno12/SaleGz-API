@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SaleGz.Application.Common.Interfaces;
 using SaleGz.Infrastructure.Persistence;
+using SaleGz.Infrastructure.Repositories;
 using SaleGz.Infrastructure.Services;
 using System.Text;
 
@@ -30,10 +32,34 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider =>
             provider.GetRequiredService<AppDbContext>());
 
-        // ── Servicios ────────────────────────────────────────
+        // ── Servicios de Autenticación y Seguridad ───────────
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ITokenService, TokenService>();
+
+        // ── Servicios de Comprobantes Electrónicos ───────────
+        services.AddScoped<IComprobanteXmlService, ComprobanteXmlService>();
+        services.AddScoped<IComprobanteRepository, ComprobanteRepository>();
+
+        // ── Servicios DGII Integration con HttpClient ────────
+        services.AddHttpClient<DgiiIntegrationService>()
+            .ConfigureHttpClient(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+                // Aquí se puede configurar la URL base de DGII desde configuración
+                var dgiiBaseUrl = configuration["DgiiSettings:BaseUrl"];
+                if (!string.IsNullOrEmpty(dgiiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(dgiiBaseUrl);
+                }
+            });
+
+        // Registrar IDgiiIntegrationService para inyección directa
+        services.AddScoped<IDgiiIntegrationService>(provider =>
+            provider.GetRequiredService<DgiiIntegrationService>());
+
+        // ── Background Services ──────────────────────────────
+        services.AddHostedService<ActualizarEstadoDgiiHostedService>();
 
         // ── JWT Authentication ───────────────────────────────
         var jwtSettings = configuration.GetSection("JwtSettings");

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SaleGz.Application.Common.Interfaces;
 using SaleGz.Domain.Enums;
 using SaleGz.Infrastructure.Persistence;
 using SaleGz.Infrastructure.Repositories;

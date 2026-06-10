@@ -1,4 +1,4 @@
-﻿// SaleGz.Application.Common.Interfaces/IDgiiIntegrationService.cs
+﻿ 
 namespace SaleGz.Application.Common.Interfaces;
 
 public record EnviarComprobanteResponse

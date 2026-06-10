@@ -1,13 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
+using SaleGz.Application.Common.Interfaces;
 using SaleGz.Domain.Entities;
 using System.Xml.Linq;
 
 namespace SaleGz.Infrastructure.Services;
-
-public interface IComprobanteXmlService
-{
-    Task<string> GenerarXmlAsync(Factura factura, CancellationToken ct);
-}
 
 public class ComprobanteXmlService : IComprobanteXmlService
 {

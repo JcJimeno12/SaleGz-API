@@ -28,8 +28,6 @@ builder.Services
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
     });
 
-
-
 // ── Swagger con soporte JWT ──────────────────────────────────────
 builder.Services.AddSwaggerGen(c =>
 {
@@ -74,6 +72,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
+ 
 var app = builder.Build();
 
 // ── Pipeline ─────────────────────────────────────────────────────

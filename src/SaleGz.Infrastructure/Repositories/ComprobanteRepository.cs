@@ -1,22 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SaleGz.Application.Common.Interfaces;
 using SaleGz.Domain.Entities;
 using SaleGz.Domain.Enums;
 using SaleGz.Infrastructure.Persistence;
 
 namespace SaleGz.Infrastructure.Repositories;
-
-public interface IComprobanteRepository
-{
-    Task<ComprobanteElectronica?> ObtenerPorFacturaAsync(int facturaId, CancellationToken ct);
-    Task<ComprobanteElectronica?> ObtenerPorNumeroComprobanteAsync(string numeroComprobante, CancellationToken ct);
-    Task<ComprobanteElectronica?> ObtenerPorTrackIdAsync(string trackId, CancellationToken ct);
-    Task<List<ComprobanteElectronica>> ObtenerPendientesAsync(CancellationToken ct);
-    Task<List<ComprobanteElectronica>> ObtenerRechazadosAsync(CancellationToken ct);
-    Task AgregarAsync(ComprobanteElectronica comprobante, CancellationToken ct);
-    Task ActualizarAsync(ComprobanteElectronica comprobante, CancellationToken ct);
-    Task RegistrarLogAsync(LogTransaccionDgii log, CancellationToken ct);
-}
 
 public class ComprobanteRepository : IComprobanteRepository
 {
